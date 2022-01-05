@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>File upload</title>
     <style>
-      .uploaded-image {
+      .to-upload,
+      .uploaded {
         display: block;
         width: 300px;
       }
@@ -15,32 +16,47 @@
   <body>
     <input class="input-file" type="file" accept="image/*" />
     <button class="upload">upload</button>
-    <img class="uploaded-image" />
+    <img class="to-upload" />
+    <img class="uploaded" />
 
     <script>
-      const $uploadedImage = document.querySelector('.uploaded-image');
       const $inputFile = document.querySelector('.input-file');
       const $upload = document.querySelector('.upload');
+      const $toUpload = document.querySelector('.to-upload');
+      const $uploaded = document.querySelector('.uploaded');
 
-      $upload.onclick = async e => {
-        // 업로드된 파일
-        const uploadedFile = $inputFile.files[0];
+      // Preview
+      $inputFile.onchange = () => {
+        const [file] = $inputFile.files;
+        $toUpload.src = URL.createObjectURL(file);
+      };
 
-        const formData = new FormData();
-        formData.append('img', uploadedFile);
+      // Upload
+      $upload.onclick = async () => {
+        try {
+          // 업로드할 파일
+          const [fileToUpload] = $inputFile.files;
 
-        // 폼데이터를 서버로 전송한다.
-        const res = await fetch('/upload', {
-          method: 'POST',
-          // headers: { 'Content-Type': 'multipart/form-data' },
-          // body: JSON.stringify(formData)
-          body: formData
-        });
-        const { success, file } = await res.json();
+          const formData = new FormData();
+          formData.append('img', fileToUpload);
 
-        if (success) {
-          console.log('UPLOAD SUCCESS!', file);
-          $uploadedImage.src = `/img/${file.originalname}`;
+          const res = await fetch('/upload', {
+            method: 'POST',
+            // headers: { 'Content-Type': 'multipart/form-data' },
+            // body: JSON.stringify(formData)
+            body: formData,
+          });
+
+          if (!res.ok) throw new Error(res.statusText);
+
+          const { success, file } = await res.json();
+
+          if (success) {
+            console.log('UPLOAD SUCCESS!', file);
+            $uploaded.src = `/img/${file.originalname}`;
+          }
+        } catch (e) {
+          console.error(e);
         }
       };
     </script>
